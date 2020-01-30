@@ -53,8 +53,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/user/:id/todos/seed", (req, res, next) => {
-  User.findById(req.params.id)
-  .then(user => {
+  User.findById(req.params.id).then(user => {
     if (!user) {
       return next(`This user not exist`);
     }
@@ -85,6 +84,37 @@ app.get("/users/seed", (req, res) => {
   User.insertMany(usersHashed).then(usersNew => res.send(usersNew));
 });
 
+app.get("/todos", (req, res) => {
+  Todo.find()
+    .populate("user")
+    .then(todo => res.send(todo));
+});
+//creating a todo
+app.post("/todo/create", (req, res, next) => {
+  console.log(req.body);
+  User.findById(req.body.user)
+    .then(user => {
+      if (!user) {
+        return next(`This user not exist`);
+      }
+      Todo.create({ title: req.body.title, user: user._id }).then(todo =>
+        res.send(todo)
+      );
+    })
+    .catch(err => next(err));
+});
+//updating a todo
+app.patch("/todo/update/:id", (req, res) => {
+  Todo.findOneAndUpdate(req.params.id, req.body, { new: true }).then(todo =>
+    res.send(todo)
+  );
+});
+
+//delete a todo
+app.delete("/todo/delete/:id", (req, res) => {
+  Todo.findOneAndDelete(req.params.id).then(res.send("the todo was deleted"));
+});
+
 // handle incoming LOGIN requests here....
 app.post("/login", (req, res, next) => {
   // find user
@@ -94,7 +124,6 @@ app.post("/login", (req, res, next) => {
       if (!user) {
         return next(`Authentication failed`);
       }
-
       // compare passwords using bcrypt.compare() function
       bcrypt.compare(req.body.password, user.password).then(success => {
         // user password does not match password from login form? => error
