@@ -33,11 +33,18 @@ const User = mongoose.model(
   })
 );
 
-const Todo = mongoose.model("Todo", new mongoose.Schema({
-    title:{type: String, required:true},
-    status:{type:String, enum:["OPEN", "IN PROCESS", "ON HOLD", "CANCELED"], default:"OPEN"},
-    user:{type:mongoose.Schema.Types.ObjectId, ref:"User"}
-}))
+const Todo = mongoose.model(
+  "Todo",
+  new mongoose.Schema({
+    title: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ["OPEN", "IN PROCESS", "ON HOLD", "CANCELED"],
+      default: "OPEN"
+    },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+  })
+);
 // parse incoming JSON data (from fetch or browser client)
 app.use(express.json());
 
@@ -45,28 +52,20 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-app.get("/user/:id/todos/seed", (req, res,next)=>{
-    User.findById(req.params.id)
-    
-    .then(user =>{
-        if (!user) {
-            return next(`This user not exist`);
-          }
-        console.log(user)
-        Todo.create([
-            {title:"Wake up",
-             user:user._id},
-             {title:"Drink coffe",
-             status:"IN PROCESS",
-             user:user._id},
-             {title:"Go to Sleep",
-             status:"CANCELED",
-             user:user._id}
-    ])
-    .then(todo=>res.send(todo))
-    })
-
-})
+app.get("/user/:id/todos/seed", (req, res, next) => {
+  User.findById(req.params.id)
+  .then(user => {
+    if (!user) {
+      return next(`This user not exist`);
+    }
+    console.log(user);
+    Todo.insertMany([
+      { title: "Wake up", user: user._id },
+      { title: "Drink coffe", status: "IN PROCESS", user: user._id },
+      { title: "Go to Sleep", status: "CANCELED", user: user._id }
+    ]).then(todo => res.send(todo));
+  });
+});
 
 app.get("/users/seed", (req, res) => {
   // array of users to create
